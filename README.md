@@ -1,4 +1,4 @@
-# YouTube Grid Customizer
+# YouTube Thumbnail Resizer
 
 A Firefox extension that lets you customize YouTube's homepage layout by adjusting the number of video columns in the grid.
 
