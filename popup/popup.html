@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <h1>YouTube Grid Customizer</h1>
+    
+    <div class="setting-group">
+      <label for="gridColumns">Number of Columns:</label>
+      <input type="range" id="gridColumns" min="1" max="8" step="1">
+      <span id="columnsValue">3</span>
+    </div>
+    
+    <div class="info-group">
+      <p>Current thumbnail size:</p>
+      <p><span id="calculatedWidth">320</span> × <span id="calculatedHeight">180</span> pixels</p>
+      <p class="note">(Size auto-adjusts based on window width)</p>
+    </div>
+    
+    <div class="button-group">
+      <button id="saveButton">Apply Layout</button>
+      <button id="resetButton">Reset to Default</button>
+    </div>
+    
+    <div class="status" id="statusMessage"></div>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>
