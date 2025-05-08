@@ -63,9 +63,8 @@ youtube-grid-customizer/
 
 ## Compatibility
 
-- Works with Firefox 78 and newer
+- Works with Firefox 138.0.1
 - Tested with YouTube's layout as of May 2025
-- Automatically adapts to most YouTube layout changes
 
 ## Known Issues
 
