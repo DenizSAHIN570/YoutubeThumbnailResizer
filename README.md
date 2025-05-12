@@ -15,7 +15,7 @@ A Firefox extension that lets you customize YouTube's homepage layout by adjusti
 ## Installation
 
 ### From Firefox Add-ons (Recommended)
-1. Visit [Firefox Add-ons Page](#) *(Add link when published)*
+1. Visit [Firefox Add-ons Page](https://addons.mozilla.org/en-US/firefox/addon/youtube-thumbnail-resizer/) WE ARE LIVE!!!
 2. Click "Add to Firefox"
 
 ### Manual Installation (Temporary)
