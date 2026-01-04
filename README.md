@@ -1,6 +1,6 @@
 # YouTube Thumbnail Resizer Firefox Addon
 
-A Firefox extension that lets you customize YouTube's homepage layout by adjusting the number of video columns in the grid.
+A browser extension that lets you customize YouTube's homepage layout by adjusting the number of video columns in the grid.
 
 ![YouTube Grid Customizer Screenshot](icons/icon-48.png)
 
@@ -24,6 +24,14 @@ A Firefox extension that lets you customize YouTube's homepage layout by adjusti
 3. Click "This Firefox" in the sidebar
 4. Click "Load Temporary Add-on"
 5. Navigate to the extension directory and select `manifest.json`
+
+### Chromium-Based Browsers (Manual)
+This extension is compatible with Chromium-based browsers (Chrome, Brave, Edge) via the WebExtensions API.
+1. Clone or download this repository
+2. Open your browser’s extensions page
+3. Enable Developer Mode
+4. Choose “Load unpacked”
+5. Select the extension directory
 
 ## Usage
 
@@ -61,10 +69,13 @@ youtube-grid-customizer/
 3. Test using Firefox's about:debugging page
 4. Package using web-ext: `web-ext build`
 
-## Compatibility
+## Compatibility (Firefox)
+- Works with Firefox 146.0
+- Tested with YouTube's layout as of Jan 2026
 
-- Works with Firefox 138.0.1
-- Tested with YouTube's layout as of May 2025
+## Compatibility (Brave)
+- Works with Brave v 1.85.118
+- Tested with YouTube's layout as of Jan 2026
 
 ## Known Issues
 
