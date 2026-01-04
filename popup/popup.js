@@ -1,5 +1,5 @@
 /**
- * YouTube Thumbnail Resizer Popup Script - Theme-Aware Version
+ * YouTube Thumbnail Resizer Popup Script - Theme-Aware Version with Shorts Control
  */
 
 // Default settings
@@ -9,7 +9,8 @@ const defaultSettings = {
   margins: 16,
   minThumbnailWidth: 200,
   maxThumbnailWidth: 500,
-  darkTheme: false
+  darkTheme: false,
+  hideShorts: false
 };
 
 // DOM elements
@@ -23,6 +24,7 @@ const saveButton = document.getElementById('saveButton');
 const resetButton = document.getElementById('resetButton');
 const statusMessage = document.getElementById('statusMessage');
 const themeToggle = document.getElementById('themeToggle');
+const hideShortsToggle = document.getElementById('hideShortsToggle');
 
 // Store the determined range constraints
 let currentRangeConstraints = {
@@ -44,6 +46,9 @@ function loadSettings() {
       // Apply theme
       applyTheme(themeSettings.darkTheme);
       themeToggle.checked = themeSettings.darkTheme;
+      
+      // Apply Shorts visibility setting
+      hideShortsToggle.checked = settings.hideShorts || false;
       
       // Get screen constraints, then apply saved value if valid
       getCurrentScreenConstraints(settings.gridColumns);
@@ -83,6 +88,7 @@ function saveThemeSettings(isDark) {
 function useDefaultSettings() {
   columnsSlider.value = defaultSettings.gridColumns;
   columnsValue.textContent = defaultSettings.gridColumns;
+  hideShortsToggle.checked = defaultSettings.hideShorts;
   
   calculatedWidth.textContent = '320';
   calculatedHeight.textContent = '180';
@@ -219,6 +225,32 @@ themeToggle.addEventListener('change', () => {
   saveThemeSettings(isDarkTheme);
 });
 
+// Toggle Shorts visibility and apply immediately
+hideShortsToggle.addEventListener('change', () => {
+  const settings = {
+    gridColumns: parseInt(columnsSlider.value, 10),
+    aspectRatio: 16/9,
+    margins: 16,
+    minThumbnailWidth: 200,
+    maxThumbnailWidth: 500,
+    hideShorts: hideShortsToggle.checked
+  };
+  
+  showStatus(hideShortsToggle.checked ? 'Hiding Shorts...' : 'Showing Shorts...', false);
+  
+  try {
+    browser.storage.local.set({ thumbnailSettings: settings }).then(() => {
+      sendSettingsToActiveTab(settings);
+    }).catch(error => {
+      console.error('Error saving settings:', error);
+      showStatus('Error applying setting. Try again.', true);
+    });
+  } catch (error) {
+    console.error('Error accessing browser API:', error);
+    showStatus('Error accessing browser API. Please try again.', true);
+  }
+});
+
 // Save settings
 saveButton.addEventListener('click', () => {
   showStatus('Applying layout...', false);
@@ -228,7 +260,8 @@ saveButton.addEventListener('click', () => {
     aspectRatio: 16/9,
     margins: 16,
     minThumbnailWidth: 200,
-    maxThumbnailWidth: 500
+    maxThumbnailWidth: 500,
+    hideShorts: hideShortsToggle.checked
   };
   
   try {
@@ -255,6 +288,7 @@ resetButton.addEventListener('click', () => {
   
   columnsSlider.value = newDefault.gridColumns;
   columnsValue.textContent = newDefault.gridColumns;
+  hideShortsToggle.checked = newDefault.hideShorts;
   
   showStatus('Resetting to optimal layout...', false);
   

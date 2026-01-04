@@ -1,21 +1,25 @@
 /**
- * YouTube Thumbnail Resizer - Complete Shorts Exclusion
- * Completely excludes Shorts from any styling, letting YouTube handle them naturally
+ * YouTube Thumbnail Resizer - With Shorts Support
+ * Handles both standard videos and Shorts with appropriate aspect ratios
  */
 
 // Default settings
 let settings = {
   gridColumns: 4,          // Default number of columns
   aspectRatio: 16/9,       // Standard video aspect ratio (width/height)
+  shortsAspectRatio: 9/16, // Shorts aspect ratio (vertical)
   margins: 16,             // Margins between thumbnails (px)
   minThumbnailWidth: 200,  // Minimum width for thumbnails
-  maxThumbnailWidth: 800   // Maximum width for thumbnails
+  maxThumbnailWidth: 800,  // Maximum width for thumbnails
+  hideShorts: false        // Hide Shorts sections entirely
 };
 
 // Current calculated dimensions
 let calculatedDimensions = {
   width: 320,
   height: 180,
+  shortsWidth: 180,
+  shortsHeight: 320,
   effectiveColumns: 4
 };
 
@@ -25,7 +29,6 @@ function debugLog(message, data) {
 }
 
 // Calculate thumbnail dimensions based on window size and grid settings
-
 function calculateDimensions() {
   // Get the main content area width
   const contentArea = document.querySelector('#primary') || document;
@@ -43,14 +46,10 @@ function calculateDimensions() {
   
   // If width per column is too small or too large, adjust column count
   if (widthPerColumnDesired < settings.minThumbnailWidth) {
-    // Calculate maximum possible columns that maintain minimum width
-    // Ensure consistent rounding with the constraints calculation
     const maxColumns = Math.floor((availableWidth + settings.margins) / (settings.minThumbnailWidth + settings.margins));
     effectiveColumns = Math.max(1, maxColumns);
     debugLog(`Adjusting down to ${effectiveColumns} columns due to minimum width constraint`);
   } else if (widthPerColumnDesired > settings.maxThumbnailWidth) {
-    // Calculate minimum columns needed to stay under maximum width
-    // Ensure consistent rounding with the constraints calculation
     const minColumns = Math.ceil((availableWidth + settings.margins) / (settings.maxThumbnailWidth + settings.margins));
     effectiveColumns = Math.max(settings.gridColumns, minColumns);
     debugLog(`Adjusting up to ${effectiveColumns} columns due to maximum width constraint`);
@@ -71,9 +70,16 @@ function calculateDimensions() {
   // Calculate height based on aspect ratio - ensure integer value
   const thumbnailHeight = Math.floor(thumbnailWidth / settings.aspectRatio);
   
+  // Calculate Shorts dimensions (vertical aspect ratio)
+  // Use regular video width as base, then calculate height to maintain 9:16 ratio
+  const shortsWidth = Math.floor(thumbnailWidth * 0.6); // Make Shorts 60% of regular video width
+  const shortsHeight = Math.floor(shortsWidth * (16/9)); // Height is width * (16/9) for 9:16 vertical aspect
+  
   return {
     width: thumbnailWidth,
     height: thumbnailHeight,
+    shortsWidth: shortsWidth,
+    shortsHeight: shortsHeight,
     effectiveColumns: effectiveColumns
   };
 }
@@ -145,7 +151,6 @@ function applyStyles() {
   debugLog('Applying styles with calculated dimensions:', calculatedDimensions);
   debugLog(`Using ${calculatedDimensions.effectiveColumns} columns (user setting: ${settings.gridColumns})`);
   
-  
   // Remove existing style element if present
   let styleEl = document.getElementById('yt-thumbnail-resizer-styles');
   if (styleEl) {
@@ -156,28 +161,28 @@ function applyStyles() {
   styleEl = document.createElement('style');
   styleEl.id = 'yt-thumbnail-resizer-styles';
   
-  // Set CSS content - ONLY target standard video grid and skip ALL Shorts-related elements
+  // Set CSS content - Handle both standard videos and Shorts
   styleEl.textContent = `
-    /* ONLY TARGET STANDARD VIDEO GRID */
+    /* ========================================
+       STANDARD VIDEO GRID
+       ======================================== */
     
-    /* Create a grid for the main home feed videos only */
+    /* Create a grid for the main home feed videos */
     ytd-rich-grid-renderer:not([is-shorts-grid]) #contents.ytd-rich-grid-renderer > ytd-rich-grid-row:not([is-shorts-grid]),
-    ytd-rich-grid-renderer:not([is-shorts-grid]) #contents.ytd-rich-grid-renderer > ytd-rich-item-renderer:not([is-short]) {
+    ytd-rich-grid-renderer:not([is-shorts-grid]) #contents.ytd-rich-grid-renderer > ytd-rich-item-renderer {
       display: contents !important;
     }
     
     ytd-rich-grid-renderer:not([is-shorts-grid]) > #contents.ytd-rich-grid-renderer {
       display: grid !important;
-      /* Use fixed pixel values for columns with effective column count */
       grid-template-columns: repeat(${calculatedDimensions.effectiveColumns}, ${calculatedDimensions.width}px) !important;
       grid-gap: ${settings.margins}px !important;
       padding: ${settings.margins}px !important;
-      /* Center the grid to avoid alignment issues */
       justify-content: center !important;
     }
     
-    /* Target standard video items only - ensure narrow selectors */
-    ytd-rich-grid-renderer:not([is-shorts-grid]) > #contents.ytd-rich-grid-renderer > ytd-rich-item-renderer:not([is-short]):not([class*="shorts"]) {
+    /* Target standard video items only */
+    ytd-rich-grid-renderer:not([is-shorts-grid]) > #contents.ytd-rich-grid-renderer > ytd-rich-item-renderer:not([is-short]) {
       grid-column: span 1 !important;
       width: ${calculatedDimensions.width}px !important;
       max-width: ${calculatedDimensions.width}px !important;
@@ -185,32 +190,125 @@ function applyStyles() {
       margin: 0 !important;
     }
     
-    /* Size standard video thumbnails only */
-    ytd-rich-grid-renderer:not([is-shorts-grid]) > #contents.ytd-rich-grid-renderer > ytd-rich-item-renderer:not([is-short]):not([class*="shorts"]) ytd-thumbnail.ytd-rich-grid-media {
+    /* Size standard video thumbnails */
+    ytd-rich-grid-renderer:not([is-shorts-grid]) > #contents.ytd-rich-grid-renderer > ytd-rich-item-renderer:not([is-short]) ytd-thumbnail.ytd-rich-grid-media {
       width: ${calculatedDimensions.width}px !important; 
       height: ${calculatedDimensions.height}px !important;
       overflow: hidden !important;
     }
     
-    /* Size thumbnail images for standard videos only */
-    ytd-rich-grid-renderer:not([is-shorts-grid]) > #contents.ytd-rich-grid-renderer > ytd-rich-item-renderer:not([is-short]):not([class*="shorts"]) ytd-thumbnail img,
-    ytd-rich-grid-renderer:not([is-shorts-grid]) > #contents.ytd-rich-grid-renderer > ytd-rich-item-renderer:not([is-short]):not([class*="shorts"]) ytd-thumbnail .yt-core-image {
+    /* Size thumbnail images for standard videos */
+    ytd-rich-grid-renderer:not([is-shorts-grid]) > #contents.ytd-rich-grid-renderer > ytd-rich-item-renderer:not([is-short]) ytd-thumbnail img,
+    ytd-rich-grid-renderer:not([is-shorts-grid]) > #contents.ytd-rich-grid-renderer > ytd-rich-item-renderer:not([is-short]) ytd-thumbnail .yt-core-image {
       width: ${calculatedDimensions.width}px !important;
       height: ${calculatedDimensions.height}px !important;
       object-fit: cover !important;
     }
     
-    /* Metadata for standard videos only */
-    ytd-rich-grid-renderer:not([is-shorts-grid]) > #contents.ytd-rich-grid-renderer > ytd-rich-item-renderer:not([is-short]):not([class*="shorts"]) #meta.ytd-rich-grid-media,
-    ytd-rich-grid-renderer:not([is-shorts-grid]) > #contents.ytd-rich-grid-renderer > ytd-rich-item-renderer:not([is-short]):not([class*="shorts"]) #video-title.ytd-rich-grid-media {
+    /* Metadata for standard videos */
+    ytd-rich-grid-renderer:not([is-shorts-grid]) > #contents.ytd-rich-grid-renderer > ytd-rich-item-renderer:not([is-short]) #meta.ytd-rich-grid-media,
+    ytd-rich-grid-renderer:not([is-shorts-grid]) > #contents.ytd-rich-grid-renderer > ytd-rich-item-renderer:not([is-short]) #video-title.ytd-rich-grid-media {
       width: ${calculatedDimensions.width}px !important;
       max-width: ${calculatedDimensions.width}px !important;
     }
     
-    /* HANDLE SECTIONS THAT NEED TO TAKE FULL WIDTH */
+    /* ========================================
+       SHORTS SUPPORT (Rich Shelf Container)
+       ======================================== */
+    
+    ${settings.hideShorts ? `
+    /* Hide Shorts entirely if setting is enabled */
+    ytd-rich-grid-renderer:not([is-shorts-grid]) > #contents.ytd-rich-grid-renderer > ytd-rich-shelf-renderer,
+    ytd-rich-shelf-renderer {
+      display: none !important;
+      visibility: hidden !important;
+      height: 0 !important;
+      overflow: hidden !important;
+    }
+    ` : `
+    /* Make Shorts shelf take full width */
+    ytd-rich-grid-renderer:not([is-shorts-grid]) > #contents.ytd-rich-grid-renderer > ytd-rich-shelf-renderer {
+      grid-column: 1 / span ${calculatedDimensions.effectiveColumns} !important;
+      width: 100% !important;
+      margin: ${settings.margins}px 0 !important;
+    }
+    
+    /* Shorts container inside shelf - make it a grid */
+    ytd-rich-shelf-renderer #contents.ytd-rich-shelf-renderer {
+      display: grid !important;
+      grid-template-columns: repeat(auto-fill, ${calculatedDimensions.shortsWidth}px) !important;
+      grid-gap: ${settings.margins}px !important;
+      justify-content: start !important;
+    }
+    
+    /* Individual Shorts items in shelf */
+    ytd-rich-shelf-renderer ytd-rich-item-renderer {
+      width: ${calculatedDimensions.shortsWidth}px !important;
+      max-width: ${calculatedDimensions.shortsWidth}px !important;
+      min-width: ${calculatedDimensions.shortsWidth}px !important;
+      margin: 0 !important;
+    }
+    
+    /* Shorts thumbnail container - reset and rebuild */
+    ytd-rich-shelf-renderer ytm-shorts-lockup-view-model .shortsLockupViewModelHostThumbnailParentContainer {
+      all: unset !important;
+      display: block !important;
+      width: ${calculatedDimensions.shortsWidth}px !important;
+      height: ${calculatedDimensions.shortsHeight}px !important;
+      overflow: hidden !important;
+      background: #000 !important;
+      border-radius: 8px !important;
+    }
+    
+    /* Shorts thumbnail view model - complete reset */
+    ytd-rich-shelf-renderer yt-thumbnail-view-model {
+      all: unset !important;
+      display: block !important;
+      width: ${calculatedDimensions.shortsWidth}px !important;
+      height: ${calculatedDimensions.shortsHeight}px !important;
+    }
+    
+    /* Shorts thumbnail images wrapper - complete reset */
+    ytd-rich-shelf-renderer yt-thumbnail-view-model .ytThumbnailViewModelImage {
+      all: unset !important;
+      display: block !important;
+      width: ${calculatedDimensions.shortsWidth}px !important;
+      height: ${calculatedDimensions.shortsHeight}px !important;
+    }
+    
+    /* All Shorts images - strip YouTube classes and apply our own */
+    ytd-rich-shelf-renderer yt-thumbnail-view-model img,
+    ytd-rich-shelf-renderer yt-thumbnail-view-model .ytThumbnailViewModelImage img,
+    ytd-rich-shelf-renderer img.ytCoreImageHost,
+    ytd-rich-shelf-renderer img[class*="ytCoreImage"] {
+      all: unset !important;
+      display: block !important;
+      width: ${calculatedDimensions.shortsWidth}px !important;
+      height: ${calculatedDimensions.shortsHeight}px !important;
+      max-width: ${calculatedDimensions.shortsWidth}px !important;
+      max-height: ${calculatedDimensions.shortsHeight}px !important;
+      min-width: ${calculatedDimensions.shortsWidth}px !important;
+      min-height: ${calculatedDimensions.shortsHeight}px !important;
+      object-fit: cover !important;
+      object-position: center !important;
+      border: none !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    
+    /* Shorts metadata */
+    ytd-rich-shelf-renderer .shortsLockupViewModelHostOutsideMetadata {
+      width: ${calculatedDimensions.shortsWidth}px !important;
+      max-width: ${calculatedDimensions.shortsWidth}px !important;
+    }
+    `}
+    
+    /* ========================================
+       FULL-WIDTH SECTIONS
+       ======================================== */
     
     /* Make sure special section containers take full grid width */
-    ytd-rich-grid-renderer:not([is-shorts-grid]) > #contents.ytd-rich-grid-renderer > ytd-shelf-renderer,
+    ytd-rich-grid-renderer:not([is-shorts-grid]) > #contents.ytd-rich-grid-renderer > ytd-shelf-renderer:not([is-shorts]),
     ytd-rich-grid-renderer:not([is-shorts-grid]) > #contents.ytd-rich-grid-renderer > ytd-horizontal-card-list-renderer,
     ytd-rich-grid-renderer:not([is-shorts-grid]) > #contents.ytd-rich-grid-renderer > ytd-horizontal-list-renderer,
     ytd-rich-grid-renderer:not([is-shorts-grid]) > #contents.ytd-rich-grid-renderer > ytd-rich-section-renderer {
@@ -218,14 +316,11 @@ function applyStyles() {
       width: 100% !important;
       margin: ${settings.margins}px 0 !important;
     }
-    
-    /* COMPLETELY IGNORE ALL SHORTS-RELATED ELEMENTS */
-    /* These selectors will NOT be styled at all */
   `;
   
   // Add style element to document
   document.head.appendChild(styleEl);
-  debugLog('Styles applied - Shorts completely excluded');
+  debugLog('Styles applied - Shorts ' + (settings.hideShorts ? 'hidden' : 'visible'));
 }
 
 // Load settings from storage
@@ -285,8 +380,7 @@ function setupMessageListener() {
         calculatedDimensions: calculatedDimensions,
         constraints: lastCalculatedConstraints
       });
-    }
-     else if (message.command === 'getScreenConstraints') {
+    } else if (message.command === 'getScreenConstraints') {
       // Calculate and return the available column range for this screen
       const constraints = calculateScreenConstraints();
       sendResponse({ 
@@ -348,7 +442,7 @@ function setupContentObserver() {
 
 // Initialize everything
 function initialize() {
-  debugLog('Initializing YouTube Thumbnail Resizer (Complete Shorts Exclusion)');
+  debugLog('Initializing YouTube Thumbnail Resizer (with Shorts Support)');
   
   // Load settings first
   loadSettings();
